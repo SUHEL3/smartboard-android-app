@@ -17,7 +17,7 @@ fun SetupNavGraph(
     val navController = rememberNavController()
     NavHost(
         navController = navController ,
-        startDestination = Screen.Main.route
+        startDestination = Screen.Login.route
     ) {
         //login
         composable(route = Screen.Login.route) {
