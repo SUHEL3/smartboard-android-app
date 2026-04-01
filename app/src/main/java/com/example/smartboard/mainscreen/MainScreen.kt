@@ -15,7 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.fontResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -171,8 +173,13 @@ fun MainScreen(
                 // Placeholder for Turn off / Chat as requested before
                AlertDialog(onDismissRequest = {selectedTab = 0}) {
                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-Column {
-    Text("Turn off Devices", color = White)
+Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Text("Turn Off All Devices", color = White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+    Text(
+        text = "This will immediately turn off all connected devices.",
+        fontSize = 14.sp,
+        color = Color.LightGray
+    )
 Spacer(modifier = Modifier.height(16.dp))
     Button(
         onClick = {
@@ -180,9 +187,14 @@ Spacer(modifier = Modifier.height(16.dp))
             viewModel1.forceTurnOFF()
             selectedTab = 0
                   },
+        colors = ButtonDefaults.buttonColors(Color.Red)
     ){
         Text("Turn off", color = White)
         Icon(painter = painterResource(R.drawable.power_settings_new_24px), contentDescription ="Power off")
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    TextButton(onClick = { selectedTab = 0 }) {
+        Text("Cancel", color = Color.Gray)
     }
 }
 
@@ -198,6 +210,7 @@ Spacer(modifier = Modifier.height(16.dp))
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardGrid(
     viewModel: BoardViewModel
@@ -213,6 +226,9 @@ fun DashboardGrid(
         DashboardItem("Fan 2", R.drawable.toys_fan_24px,"appliance4"),
         DashboardItem("Outlet", R.drawable.smart_outlet_24px,"appliance3")
     )
+    var timerAlertDialog by remember { mutableStateOf(false) }
+
+    var selectedTimer by remember { mutableStateOf("") }
 
     //var activeItems by remember { mutableStateOf(setOf<String>()) }
     val selectedBoard by remember { mutableStateOf("Hall") }
@@ -246,7 +262,11 @@ fun DashboardGrid(
                         //  Write to Firebase
                         viewModel.updateDeviceState(item.dbKey, !isActive)
                     },
-                    onTimerClick = {}
+                    onTimerClick = {
+                        // Handle timer click
+                        selectedTimer = item.dbKey
+                        timerAlertDialog = !timerAlertDialog
+                    }
                 )
             }
        }
@@ -289,6 +309,97 @@ fun DashboardGrid(
             }
         }
     }
+    var isTimerOn by remember { mutableStateOf(false) }
+    val timeState = rememberTimePickerState(
+        initialHour = 12,
+        initialMinute = 0,
+        is24Hour = false
+    )
+    if(timerAlertDialog) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))//diming effect
+        ){
+        BasicAlertDialog(onDismissRequest = { timerAlertDialog = false }) {
+            Column(
+                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF1E2A38) // dark bluish background
+                    ),
+                    elevation = CardDefaults.cardElevation(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+
+                        Column {
+                            Text(
+                                text = "Timer",
+                                fontSize = 18.sp,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Enable scheduling for devices",
+                                fontSize = 14.sp,
+                                color = Color.LightGray
+                            )
+                        }
+
+                        Switch(
+                            checked = isTimerOn,
+                            onCheckedChange = { isTimerOn = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF6C63FF), // purple highlight
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = Color.DarkGray
+                            )
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+
+                TimePicker(state = timeState)
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+
+                    TextButton(
+                        onClick = { timerAlertDialog = false }
+                    ) {
+                        Text("Cancel", color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = { timerAlertDialog = false }
+                    ) {
+                        Text("Set Timer")
+                    }
+                }
+            }
+        }
+    }
+    }
 }
 
 
@@ -311,15 +422,16 @@ fun DashboardCard(
         onClick = onClick
     ) {Box(modifier = Modifier.fillMaxSize()){
         IconButton(
-            onClick = {},
-            modifier = Modifier.align(Alignment.BottomEnd)
-                .padding(0.dp,0.dp,4.dp,4.dp)
+            onClick = onTimerClick,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(0.dp, 0.dp, 4.dp, 4.dp)
         ) {
             Icon(
                 painter = painterResource(R.drawable.timer_24px),
                 contentDescription = "Timer",
                 modifier = Modifier.size(32.dp),
-                tint = White
+                tint = if(isActive) IconBlue else White
             )
         }
         Column(
