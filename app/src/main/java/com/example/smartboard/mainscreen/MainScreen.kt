@@ -1,5 +1,7 @@
 package com.example.smartboard.mainscreen
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +31,7 @@ import com.example.smartboard.ui.theme.*
 
 data class DashboardItem(val title: String, val icon: Int ,val dbKey: String)
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -202,13 +205,14 @@ Spacer(modifier = Modifier.height(16.dp))
 }
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardGrid(
     viewModel: BoardViewModel
 ) {
 
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         viewModel.listenToDeviceStates()
     }
 
@@ -226,6 +230,15 @@ fun DashboardGrid(
     val selectedBoard by remember { mutableStateOf("Hall") }
 
     val deviceStates by viewModel.deviceStates.collectAsState()
+
+    var isTimerOn by remember{ mutableStateOf(false) }
+
+    val timerStates by viewModel.timerStates.collectAsState()
+
+    var selectedHour by remember { mutableStateOf(12) }
+    var selectedMinute by remember { mutableStateOf(0) }
+
+    val timeState = rememberTimePickerState(is24Hour = true)
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -255,9 +268,22 @@ fun DashboardGrid(
                         viewModel.updateDeviceState(item.dbKey, !isActive)
                     },
                     onTimerClick = {
-                        // Handle timer click
                         selectedTimer = item.dbKey
-                        timerAlertDialog = !timerAlertDialog
+
+                        val timerData = timerStates[item.dbKey]
+
+                        isTimerOn = timerData?.enabled ?: false
+
+                        val time = timerData?.start ?: "00:00"
+                        val parts = time.split(":")
+
+                        val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
+                        val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+
+                        timeState.hour = hour
+                        timeState.minute = minute
+
+                        timerAlertDialog = true
                     }
                 )
             }
@@ -301,12 +327,7 @@ fun DashboardGrid(
             }
         }
     }
-    var isTimerOn by remember { mutableStateOf(false) }
-    val timeState = rememberTimePickerState(
-        initialHour = 12,
-        initialMinute = 0,
-        is24Hour = false
-    )
+
     if(timerAlertDialog) {
         Box(
             modifier = Modifier.fillMaxSize()
@@ -366,6 +387,7 @@ fun DashboardGrid(
 
                 TimePicker(state = timeState)
 
+
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(
                     modifier = Modifier
@@ -383,7 +405,18 @@ fun DashboardGrid(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Button(
-                        onClick = { timerAlertDialog = false }
+                        onClick = {
+                            val hour = timeState.hour
+                            val minute = timeState.minute
+
+                            selectedHour = timeState.hour
+                            selectedMinute = timeState.minute
+
+                            val formattedTime = String.format("%02d:%02d", hour, minute)
+                            if (selectedTimer.isNotEmpty()) {
+                                viewModel.updateTimer(isTimerOn, formattedTime, selectedTimer)
+                            }
+                            timerAlertDialog = false }
                     ) {
                         Text("Set Timer")
                     }
@@ -455,6 +488,7 @@ fun DashboardCard(
 }
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MainScreenPreview() {
