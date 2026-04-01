@@ -15,15 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.fontResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.smartboard.HistoryScreen
+import com.example.smartboard.history_feature.HistoryScreen
 import com.example.smartboard.R
 import com.example.smartboard.login.modelviewmodel.AuthViewModel
 import com.example.smartboard.mainscreen.mainscreenviewmodel.BoardViewModel
@@ -43,15 +41,9 @@ fun MainScreen(
     val icons = listOf(painterResource(R.drawable.home_24px),painterResource(R.drawable.power_settings_new_24px), painterResource(R.drawable.history_24px))
     var bDisplaymenu by remember {mutableStateOf(false)}
     val boardList by viewModel1.boardList.collectAsState()
-    val historyList by viewModel1.historyList.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel1.getBoard("suhelmujawar3269@gmail.com")
-    }
-    LaunchedEffect(selectedTab) {
-        if(selectedTab  == 2) {
-            viewModel1.FetchHistory()
-        }
     }
     Scaffold(
         topBar = {
@@ -202,7 +194,7 @@ Spacer(modifier = Modifier.height(16.dp))
                }
             } else {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    HistoryScreen(historyList)
+                    HistoryScreen(email = "suhelmujawar3269@gmail.com")
                 }
             }
         }

@@ -1,14 +1,18 @@
 package com.example.smartboard.mainscreen.mainscreenviewmodel
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
+import com.example.smartboard.history_feature.HistoryDataClass
 import com.google.firebase.Firebase
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.time.LocalTime
 import kotlin.collections.plus
 
 class BoardViewModel(
@@ -57,21 +61,23 @@ class BoardViewModel(
         })
     }
 
-    fun updateDeviceState(devicekey: String, state: Boolean) {
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updateDeviceState(devicekey: String, state: Boolean, user: String = "suhelmujawar3269@gmail.com") {
         Log.d("STEP1", "Updating $devicekey to $state")
         databaseref.child(devicekey).child("state").setValue(state)
+        updateHistory(devicekey, if (state) "On" else "Off", user, LocalTime.now())
     }
-    private val db = FirebaseFirestore.getInstance()
-    private val _historyList = MutableStateFlow<List<HistoryDataClass>>(emptyList())
-    val historyList: StateFlow<List<HistoryDataClass>> = _historyList
-    fun FetchHistory(email : String = "suhelmujawar3269@gmail.com"){
-        db.collection(email).document("history").collection("history")
-            .get().addOnSuccessListener {snapshot->
-                val list = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(HistoryDataClass::class.java)
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updateHistory(appliance: String, operation: String, user: String,time: LocalTime) {
+        val db = FirebaseFirestore.getInstance()
+            db.collection(user).document("history").collection("history")
+                .add(HistoryDataClass(appliance, operation, user = user,timestamp = time.toString()))
+                .addOnSuccessListener {
+                    Log.d("Firestore", "DocumentSnapshot successfully written!")
+                }.addOnFailureListener { e ->
+                    Log.w("Firestore", "Error writing document", e)
                 }
-                _historyList.value = list
-            }
     }
 }
 

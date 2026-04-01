@@ -5,7 +5,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.smartboard.HistoryScreen
 import com.example.smartboard.login.CreateAccountScreen
 import com.example.smartboard.login.ForgotPasswordScreen
 import com.example.smartboard.login.LoginScreen
@@ -18,7 +17,7 @@ fun SetupNavGraph(
     val navController = rememberNavController()
     NavHost(
         navController = navController ,
-        startDestination = Screen.Login.route
+        startDestination = Screen.Main.route
     ) {
         //login
         composable(route = Screen.Login.route) {
